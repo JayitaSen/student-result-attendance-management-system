@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><title>Login • SMS</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="display:flex;align-items:center;justify-content:center;height:100vh;">
+  <div class="card" style="width:360px;">
+    <h2 style="margin:0 0 12px;">Welcome</h2>
+    <p>Sign in to manage students, attendance, and results.</p>
+    <div class="form-row" style="grid-template-columns: 1fr;">
+      <input id="email" placeholder="Email" value="admin@sms.local">
+      <input id="password" placeholder="Password" type="password" value="admin123">
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="loginBtn">Login</button>
+    </div>
+    <p id="msg" style="color:#ef4444;margin-top:8px;"></p>
+  </div>
+  <script type="module">
+    import { login } from './js/auth.js';
+    document.getElementById('loginBtn').onclick = async () => {
+      try {
+        await login(document.getElementById('email').value, document.getElementById('password').value);
+      } catch (e) { document.getElementById('msg').textContent = e.message; }
+    };
+  </script>
+</body>
+</html>

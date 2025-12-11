@@ -1,0 +1,66 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><title>Dashboard • SMS</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head><body>
+<div class="layout">
+  <aside class="sidebar">
+    <h2>SMS</h2>
+    <nav class="nav">
+      <a href="index.html" class="active">🏠 Dashboard</a>
+      <a href="students.html">👨‍🎓 Students</a>
+      <a href="attendance.html">📅 Attendance</a>
+      <a href="results.html">📊 Results</a>
+      <a href="reports.html">📑 Reports</a>
+      <a href="#" id="logout">🔒 Logout</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="header">
+      <input placeholder="Search (coming soon)" disabled>
+      <div>Hi, <span id="userName">Admin</span></div>
+    </div>
+    <section class="kpis">
+      <div class="card"><h3>Total students</h3><div class="value" id="kpiStudents">—</div></div>
+      <div class="card"><h3>Average attendance</h3><div class="value" id="kpiAttendance">—%</div></div>
+      <div class="card"><h3>Top performer</h3><div class="value" id="kpiTop">—</div></div>
+    </section>
+    <section class="grid">
+      <div class="card">
+        <h3>Attendance last 7 days</h3>
+        <canvas id="attChart" height="120"></canvas>
+      </div>
+      <div class="card">
+        <h3>Class-wise average marks</h3>
+        <canvas id="marksChart" height="120"></canvas>
+      </div>
+    </section>
+    <div class="footer">© 2025 Student SMS.</div>
+  </main>
+</div>
+<script type="module">
+  import { requireAuth, logout } from './js/auth.js';
+  import { api } from './js/api.js';
+  requireAuth();
+  document.getElementById('userName').textContent = localStorage.getItem('userName') || 'User';
+  document.getElementById('logout').onclick = logout;
+
+  const kpis = await api('/api/kpis');
+  document.getElementById('kpiStudents').textContent = kpis.total_students;
+  document.getElementById('kpiAttendance').textContent = `${kpis.avg_attendance}%`;
+  document.getElementById('kpiTop').textContent = kpis.top_performer;
+
+  // Simple demo charts (static; adapt as needed)
+  const ctxA = document.getElementById('attChart');
+  new Chart(ctxA, { type: 'line', data: {
+    labels: ['D-6','D-5','D-4','D-3','D-2','D-1','Today'],
+    datasets: [{ label:'Present %', data:[80,85,78,90,88,86,89], borderColor:'#10B981' }]
+  }, options:{ plugins:{legend:{display:false}} }});
+
+  const ctxM = document.getElementById('marksChart');
+  new Chart(ctxM, { type: 'bar', data: {
+    labels: ['10-A','10-B','10-C'],
+    datasets: [{ label:'Avg %', data:[78,72,81], backgroundColor:'#1E3A8A' }]
+  }, options:{ plugins:{legend:{display:false}} }});
+</script>
+</body></html>

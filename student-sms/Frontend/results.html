@@ -1,0 +1,81 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><title>Results • SMS</title>
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<div class="layout">
+  <aside class="sidebar">
+    <h2>SMS</h2>
+    <nav class="nav">
+      <a href="index.html">🏠 Dashboard</a>
+      <a href="students.html">👨‍🎓 Students</a>
+      <a href="attendance.html">📅 Attendance</a>
+      <a href="results.html" class="active">📊 Results</a>
+      <a href="reports.html">📑 Reports</a>
+      <a href="#" id="logout">🔒 Logout</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="header">
+      <select id="student"></select>
+      <select id="subject"></select>
+      <input id="term" placeholder="Term (e.g. Term-1)" value="Term-1">
+      <input id="marks" type="number" placeholder="Marks obtained">
+      <input id="max" type="number" placeholder="Max marks" value="100">
+      <div class="actions"><button class="btn primary" id="save">Save</button></div>
+    </div>
+    <div class="grid">
+      <table class="table" id="tbl">
+        <thead><tr><th>Subject</th><th>Term</th><th>Marks</th><th>Grade</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<script type="module">
+  import { requireAuth, logout } from './js/auth.js';
+  import { api } from './js/api.js';
+  requireAuth(); document.getElementById('logout').onclick = logout;
+
+  const students = await api('/api/students');
+  const subjects = await api('/api/subjects');
+
+  const studentSel = document.getElementById('student');
+  students.forEach(s => {
+    const o = document.createElement('option'); o.value=s.id; o.textContent=`${s.roll_no} • ${s.name}`;
+    studentSel.appendChild(o);
+  });
+  const subjectSel = document.getElementById('subject');
+  subjects.forEach(sub => {
+    const o = document.createElement('option'); o.value=sub.id; o.textContent=`${sub.code} • ${sub.name}`;
+    subjectSel.appendChild(o);
+  });
+
+  async function loadTable() {
+    const rows = await api(`/api/results?student_id=${studentSel.value}&term=${document.getElementById('term').value}`);
+    const tbody = document.querySelector('#tbl tbody'); tbody.innerHTML = '';
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.code} • ${r.subject_name}</td><td>${r.term}</td><td>${r.marks_obtained}/${r.max_marks}</td><td>${r.grade}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('save').onclick = async () => {
+    const payload = {
+      student_id: parseInt(studentSel.value,10),
+      subject_id: parseInt(subjectSel.value,10),
+      term: document.getElementById('term').value,
+      marks_obtained: parseFloat(document.getElementById('marks').value),
+      max_marks: parseFloat(document.getElementById('max').value)
+    };
+    await api('/api/results', { method:'POST', body: JSON.stringify(payload) });
+    await loadTable();
+    alert('Saved!');
+  };
+
+  studentSel.onchange = loadTable;
+  document.getElementById('term').oninput = loadTable;
+  studentSel.value = students[0]?.id || '';
+  await loadTable();
+</script>
+</body></html>

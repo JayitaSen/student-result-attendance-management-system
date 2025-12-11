@@ -1,0 +1,83 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><title>Attendance • SMS</title>
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<div class="layout">
+  <aside class="sidebar">
+    <h2>SMS</h2>
+    <nav class="nav">
+      <a href="index.html">🏠 Dashboard</a>
+      <a href="students.html">👨‍🎓 Students</a>
+      <a href="attendance.html" class="active">📅 Attendance</a>
+      <a href="results.html">📊 Results</a>
+      <a href="reports.html">📑 Reports</a>
+      <a href="#" id="logout">🔒 Logout</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="header">
+      <input type="date" id="date">
+      <div class="actions"><button class="btn primary" id="save">Save</button></div>
+    </div>
+    <div class="grid">
+      <table class="table" id="tbl">
+        <thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<script type="module">
+  import { requireAuth, logout } from './js/auth.js';
+  import { api } from './js/api.js';
+  requireAuth(); document.getElementById('logout').onclick = logout;
+
+  const dateEl = document.getElementById('date');
+  dateEl.valueAsDate = new Date();
+
+  const students = await api('/api/students');
+  const tbody = document.querySelector('#tbl tbody');
+  const state = new Map();
+
+  function render() {
+    tbody.innerHTML = '';
+    students.forEach(s => {
+      const tr = document.createElement('tr');
+      const status = state.get(s.id) || 'Present';
+      tr.innerHTML = `<td>${s.roll_no}</td><td>${s.name}</td>
+        <td>
+          <select data-id="${s.id}">
+            <option ${status==='Present'?'selected':''}>Present</option>
+            <option ${status==='Absent'?'selected':''}>Absent</option>
+            <option ${status==='Late'?'selected':''}>Late</option>
+          </select>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  tbody.onchange = (e) => {
+    const id = parseInt(e.target.dataset.id, 10);
+    state.set(id, e.target.value);
+  };
+
+  async function loadExisting() {
+    const rows = await api(`/api/attendance?date=${dateEl.value}`);
+    rows.forEach(r => state.set(r.student_id, r.status));
+    render();
+  }
+
+  document.getElementById('save').onclick = async () => {
+    const date = dateEl.value;
+    const promises = students.map(s => {
+      const status = state.get(s.id) || 'Present';
+      return api('/api/attendance', { method:'POST', body: JSON.stringify({ student_id: s.id, date, status }) });
+    });
+    await Promise.all(promises);
+    alert('Saved!');
+  };
+
+  dateEl.onchange = loadExisting;
+  render(); loadExisting();
+</script>
+</body></html>

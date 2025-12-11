@@ -1,0 +1,66 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><title>Reports • SMS</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head><body>
+<div class="layout">
+  <aside class="sidebar">
+    <h2>SMS</h2>
+    <nav class="nav">
+      <a href="index.html">🏠 Dashboard</a>
+      <a href="students.html">👨‍🎓 Students</a>
+      <a href="attendance.html">📅 Attendance</a>
+      <a href="results.html">📊 Results</a>
+      <a href="reports.html" class="active">📑 Reports</a>
+      <a href="#" id="logout">🔒 Logout</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="header">
+      <div>Analytics</div>
+      <div class="actions">
+        <button class="btn secondary" id="export">Export CSV</button>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>Attendance distribution</h3><canvas id="pie" height="120"></canvas></div>
+      <div class="card"><h3>Top 5 students (avg marks)</h3><canvas id="bar" height="120"></canvas></div>
+    </div>
+  </main>
+</div>
+<script type="module">
+  import { requireAuth, logout } from './js/auth.js'; requireAuth(); document.getElementById('logout').onclick = logout;
+  import { api } from './js/api.js';
+
+  // Attendance distribution
+  const att = await api('/api/attendance');
+  const counts = { Present:0, Absent:0, Late:0 };
+  att.forEach(a => counts[a.status]++);
+  new Chart(document.getElementById('pie'), {
+    type:'pie', data:{ labels:['Present','Absent','Late'], datasets:[{ data:[counts.Present, counts.Absent, counts.Late], backgroundColor:['#10B981','#ef4444','#F59E0B'] }] }
+  });
+
+  // Top students by average marks
+  const results = await api('/api/results');
+  const sums = new Map(), countsMap = new Map();
+  results.forEach(r => {
+    const key = r.student_name;
+    sums.set(key, (sums.get(key)||0) + r.marks_obtained);
+    countsMap.set(key, (countsMap.get(key)||0) + 1);
+  });
+  const avgs = Array.from(sums.keys()).map(k => ({ name:k, avg: (sums.get(k)/countsMap.get(k)) })).sort((a,b)=>b.avg-a.avg).slice(0,5);
+  new Chart(document.getElementById('bar'), {
+    type:'bar', data:{ labels: avgs.map(a=>a.name), datasets:[{ data: avgs.map(a=>Math.round(a.avg)), backgroundColor:'#1E3A8A' }] },
+    options:{ plugins:{legend:{display:false}} }
+  });
+
+  // Export CSV (results)
+  document.getElementById('export').onclick = () => {
+    const rows = [['Student','Subject','Term','Marks','Max','Grade']];
+    results.forEach(r => rows.push([r.student_name, r.subject_name, r.term, r.marks_obtained, r.max_marks, r.grade]));
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'results.csv'; a.click();
+  };
+</script>
+</body></html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><title>Students • SMS</title>
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<div class="layout">
+  <aside class="sidebar">
+    <h2>SMS</h2>
+    <nav class="nav">
+      <a href="index.html">🏠 Dashboard</a>
+      <a href="students.html" class="active">👨‍🎓 Students</a>
+      <a href="attendance.html">📅 Attendance</a>
+      <a href="results.html">📊 Results</a>
+      <a href="reports.html">📑 Reports</a>
+      <a href="#" id="logout">🔒 Logout</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="header">
+      <input id="search" placeholder="Search by name/roll...">
+      <div class="actions">
+        <button class="btn secondary" id="addBtn">Add student</button>
+      </div>
+    </div>
+    <div class="grid">
+      <table class="table" id="tbl">
+        <thead><tr>
+          <th>Roll</th><th>Name</th><th>Class</th><th>Section</th><th>Phone</th><th>Email</th><th>Actions</th>
+        </tr></thead><tbody></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div class="modal" id="modal">
+  <div class="panel">
+    <h3 id="modalTitle">Add student</h3>
+    <div class="form-row"><input id="roll_no" placeholder="Roll no"><input id="name" placeholder="Name"></div>
+    <div class="form-row"><input id="class" placeholder="Class"><input id="section" placeholder="Section"></div>
+    <div class="form-row"><input id="dob" type="date"><input id="guardian" placeholder="Guardian"></div>
+    <div class="form-row"><input id="phone" placeholder="Phone"><input id="email" placeholder="Email"></div>
+    <div class="actions">
+      <button class="btn primary" id="saveBtn">Save</button>
+      <button class="btn" id="closeBtn">Close</button>
+    </div>
+    <p id="msg" style="color:#ef4444;"></p>
+  </div>
+</div>
+
+<script type="module">
+  import { requireAuth, logout } from './js/auth.js';
+  import { api } from './js/api.js';
+  requireAuth(); document.getElementById('logout').onclick = logout;
+
+  let students = [];
+  let editingId = null;
+
+  async function load() { students = await api('/api/students'); render(); }
+  function render() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const tbody = document.querySelector('#tbl tbody'); tbody.innerHTML = '';
+    students.filter(s => (s.name+s.roll_no).toLowerCase().includes(q)).forEach(s => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${s.roll_no}</td><td>${s.name}</td><td>${s.class}</td><td>${s.section||''}</td>
+        <td>${s.phone||''}</td><td>${s.email||''}</td>
+        <td class="actions">
+          <button class="btn secondary" data-edit="${s.id}">Edit</button>
+          <button class="btn accent" data-del="${s.id}">Delete</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('search').oninput = render;
+  const modal = document.getElementById('modal');
+  function openModal(title, s={}) {
+    document.getElementById('modalTitle').textContent = title; modal.classList.add('show');
+    document.getElementById('roll_no').value = s.roll_no||''; document.getElementById('name').value = s.name||'';
+    document.getElementById('class').value = s.class||''; document.getElementById('section').value = s.section||'';
+    document.getElementById('dob').value = s.dob||''; document.getElementById('guardian').value = s.guardian||'';
+    document.getElementById('phone').value = s.phone||''; document.getElementById('email').value = s.email||'';
+    document.getElementById('msg').textContent = '';
+  }
+  function closeModal(){ modal.classList.remove('show'); editingId=null; }
+  document.getElementById('addBtn').onclick = () => { editingId=null; openModal('Add student'); };
+  document.getElementById('closeBtn').onclick = closeModal;
+
+  document.querySelector('#tbl').onclick = (e) => {
+    const id = e.target.dataset.edit || e.target.dataset.del;
+    if (!id) return;
+    const s = students.find(x => x.id == id);
+    if (e.target.dataset.edit) { editingId = id; openModal('Edit student', s); }
+    if (e.target.dataset.del && confirm('Delete student?')) {
+      api(`/api/students/${id}`, { method:'DELETE' }).then(load).catch(err => alert(err.message));
+    }
+  };
+
+  document.getElementById('saveBtn').onclick = async () => {
+    const payload = {
+      roll_no: roll_no.value, name: name.value, class: class.value,
+      section: section.value, dob: dob.value, guardian: guardian.value,
+      phone: phone.value, email: email.value
+    };
+    try {
+      if (editingId) await api(`/api/students/${editingId}`, { method:'PUT', body: JSON.stringify(payload) });
+      else await api('/api/students', { method:'POST', body: JSON.stringify(payload) });
+      closeModal(); load();
+    } catch (e) { document.getElementById('msg').textContent = e.message; }
+  };
+
+  load();
+</script>
+</body></html>

@@ -1,7 +1,6 @@
 # Student Result & Attendance Management System (SMS)
 
-A full‑stack web application to manage students, attendance, results, and reports.  
-Built with **Node.js, Express, SQLite, HTML, CSS, and JavaScript**.
+Full-stack Course Management System built with Spring Boot, MySQL, and HTML/CSS/JS
 
 ---
 
@@ -92,6 +91,7 @@ Login with:
 👩‍💻 Author
 Developed by Jayita
 Persistent and resourceful full‑stack developer, focused on building robust, portfolio‑ready web applications.
+
 
 
 

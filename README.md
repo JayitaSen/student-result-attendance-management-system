@@ -1,7 +1,9 @@
-# online-course-management-system
-Full-stack Course Management System built with Spring Boot, MySQL, and HTML/CSS/JS
+# student-result-attendance-management-system
 
 # Student Result & Attendance Management System (SMS)
+A full-stack web application for managing students, attendance, and results. 
+Built with Node.js, Express, SQLite, and vanilla HTML/CSS/JS. 
+Features include authentication, CRUD operations for students, attendance tracking, result management, and analytics dashboard with reports.
 
 
 
